@@ -7,10 +7,14 @@ import Button from '@mui/material/Button';
 import './styles.css'; 
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import Edit from './components/editModal/page';
-import { useRouter } from 'next/router';
+// import Edit from './components/editModal/[id]/page';
+import { useRouter } from 'next/navigation';
+
 
 export default function Home() {
+
+  const router = useRouter();
+  const [tasks, setTasks] = useState<Task[]>([]);
 
   interface Task {
     _id: string;
@@ -29,7 +33,7 @@ export default function Home() {
       .required('Priority is required'),
     status: yup
     .string()
-    .required('Priority is required')
+    .required('Status is required')
   });
 
 
@@ -41,23 +45,27 @@ export default function Home() {
     },
     validationSchema: validation,
     onSubmit: async (values) => {
-      console.log(values);
+          try {
+              await axios.post(`http://localhost:3001/todo/`, values);
+              formik.resetForm();
+              fetchTasks();
+          } catch (error) {
+              console.error('Error updating task:', error);
+          }
     },
   });
 
-
-  const [tasks, setTasks] = useState<Task[]>([]);
+  const fetchTasks = async () => {
+    try {
+      const response = await axios.get('http://localhost:3001/todo/'); 
+      setTasks(response.data.tasks); 
+      console.log(response.data.tasks);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+    }
+  };
 
   useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        const response = await axios.get(''); 
-        setTasks(response.data); 
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
-      }
-    };
-
     fetchTasks();
   }, []);
 
@@ -69,10 +77,10 @@ export default function Home() {
   //   status: 'In Progress'
   // };
 
-  const router = useRouter();
+
 
   const handleEdit = (id: string) => {
-    router.push(`/edit/${id}`);
+    router.push(`/editModal/${id}`);
   };
 
 
@@ -83,7 +91,7 @@ export default function Home() {
     const updatedTasks = tasks.filter(task => task._id !== id); 
     setTasks(updatedTasks);
 
-    axios.delete(`https://your-api-endpoint.com/tasks/${id}`)
+    axios.delete(`http://localhost:3001/todo/?id=${id}`)
       .then(response => {
         console.log('Task deleted:', response.data);
       })

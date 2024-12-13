@@ -6,19 +6,21 @@ import { TextField, Select, MenuItem, FormControl, InputLabel, FormHelperText } 
 import Button from '@mui/material/Button';
 import { useState, useEffect } from 'react';
 import axios from 'axios';
-import 'editModal.css';
-import { useRouter } from 'next/router';
+import { useRouter } from 'next/navigation';
+import { useParams } from 'next/navigation';
+import './editModal.css'
 
-
-export default function Edit(id: string) {
-
+export default function Edit() {
+    const params = useParams();
+    const { id } = params;
     const [initialData, setinitialData] = useState<any>();
 
     useEffect(() => {
         const fetchTasks = async () => {
           try {
-            const response = await axios.get('.../{$id}'); 
-            setinitialData(response.data); 
+            const response = await axios.get(`http://localhost:3001/todo/?id=${id}`); 
+            console.log("Edit", response.data);
+            setinitialData(response.data.task); 
           } catch (error) {
             console.error('Error fetching tasks:', error);
           }
@@ -44,21 +46,22 @@ export default function Edit(id: string) {
 
       const formik = useFormik({
         initialValues: {
-          title: initialData.title,
-          priority: initialData.priority,
-          status: initialData.status
+            title: initialData?.title || "",
+            priority: initialData?.priority || "Medium",
+            status: initialData?.status || "Pending",
         },
+        enableReinitialize: true, // Enable reinitialization when `initialData` updates
         validationSchema: validation,
         onSubmit: async (values) => {
             console.log('Form submitted:', values);
             try {
-              await axios.put(`https://your-api-endpoint.com/tasks/${id}`, values);
+                await axios.put(`http://localhost:3001/todo/?id=${id}`, values);
+                router.push('/'); // Navigate back after successful submission
             } catch (error) {
-              console.error('Error updating task:', error);
+                console.error('Error updating task:', error);
             }
-            router.push('/');
-          },
-      });
+        },
+    });
 
       return (
         <div className="edit-form-container">
